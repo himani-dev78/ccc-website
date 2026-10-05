@@ -152,7 +152,7 @@ export default function Hero() {
         if (Math.abs(dx) > 50) goTo(index + (dx < 0 ? 1 : -1));
         touchX.current = null;
       }}
-      className="relative h-[calc(100svh_-_100px)] max-h-[860px] min-h-[600px] w-full overflow-hidden  outline-none"
+      className="relative h-[calc(100svh_-_100px)] max-h-[860px] min-h-[600px] w-full bg-[#062970] overflow-hidden  outline-none"
     >
       {SLIDES.map((s, i) => {
         const active = i === index;
@@ -227,7 +227,7 @@ export default function Hero() {
                     "delay-200",
                   )}`}
                 >
-                  <span className="block text-black">{s.title[0]}</span>
+                  <span className="block text-white">{s.title[0]}</span>
                   <span className="block text-[#f9bd0e]">{s.title[1]}</span>
                 </h2>
 

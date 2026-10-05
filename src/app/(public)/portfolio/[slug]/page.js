@@ -3,9 +3,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 
 export default function PortfolioDetailPage() {
+  const params = useParams();
+  const slug = typeof params.slug === "string" ? params.slug : "";
   const [portfolio, setPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -17,22 +20,20 @@ export default function PortfolioDetailPage() {
         ? [portfolio.image]
         : [];
 
-  const slug =
-    typeof window !== "undefined"
-      ? window.location.pathname.split("/").filter(Boolean).pop()
-      : "";
-
   useEffect(() => {
     if (!slug) return;
+
+    const controller = new AbortController();
 
     async function fetchPortfolio() {
       try {
         setLoading(true);
         setError("");
 
-        const response = await fetch(
-          `/api/portfolio/${slug}`
-        );
+        const response = await fetch(`/api/portfolio/${encodeURIComponent(slug)}`, {
+          signal: controller.signal,
+          cache: "no-store",
+        });
 
         const data = await response.json();
 
@@ -45,24 +46,20 @@ export default function PortfolioDetailPage() {
 
         setPortfolio(data.portfolio);
       } catch (error) {
-        console.error(
-          "Fetch portfolio error:",
-          error
-        );
-
-        setError(
-          error.message ||
-            "Something went wrong"
-        );
+        if (error.name !== "AbortError") {
+          console.error("Fetch portfolio error:", error);
+          setError(error.message || "Something went wrong");
+        }
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     fetchPortfolio();
+    return () => controller.abort();
   }, [slug]);
 
-  if (loading) {
+  if (loading && slug) {
     return (
       <main className="min-h-screen bg-white">
         <div className="flex min-h-[70vh] items-center justify-center">
@@ -81,7 +78,7 @@ export default function PortfolioDetailPage() {
     );
   }
 
-  if (error || !portfolio) {
+  if (!slug || error || !portfolio) {
     return (
       <main className="min-h-screen bg-white">
         <div className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-6 text-center">
@@ -98,6 +95,7 @@ export default function PortfolioDetailPage() {
 
           <p className="mt-2 max-w-md text-gray-500">
             {error ||
+              (!slug && "Portfolio slug is missing.") ||
               "The portfolio case study you are looking for does not exist."}
           </p>
 

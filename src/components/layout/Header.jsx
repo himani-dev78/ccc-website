@@ -18,10 +18,15 @@ const NAV = [
   { label: "Home", href: "/" },
   {
     label: "About Us",
-    links: [
-      { label: "Our Team", href: "#" },
-      { label: "Our Client", href: "#" },
-    ],
+    href: "/about-us",
+  },
+  {
+    label: "Team",
+    href: "/team",
+  },
+  {
+    label: "Insights",
+    href: "/insights",
   },
   {
     label: "Services",
@@ -37,8 +42,14 @@ const NAV = [
   { label: "Portfolio", href: "/portfolio" },
 ];
 
+// Underline-on-hover, same treatment as the "Authority Quotient" link —
+// replaces the old pill-background hover.
 const itemBase =
-  "flex items-center gap-2 rounded-full px-4 py-2 text-[16px] font-medium text-white transition-colors hover:bg-[#f9bd0e] hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f9bd0e]";
+  "flex items-center gap-2 rounded-full px-4 py-2 text-[16px] font-medium text-black underline-offset-8 decoration-2 decoration-transparent transition-colors hover:text-[#f9bd0e] hover:underline hover:decoration-[#f9bd0e] focus-visible:text-[#f9bd0e] focus-visible:underline focus-visible:decoration-[#f9bd0e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f9bd0e]";
+
+// Used when a trigger/link needs to stay "active" (open dropdown) without
+// the solid yellow pill fighting the underline style.
+const itemActive = "text-[#f9bd0e] underline decoration-[#f9bd0e]";
 
 function Chevron({ open = false }) {
   return (
@@ -67,12 +78,13 @@ function Logo() {
       aria-label="Client Centered Consulting home"
     >
       <Image
-        src="/ccc-new-logo-rev3.png"
+        src="/ccc-logo-black-text.png"
         alt="Client Centered Consulting"
         width={180}
         height={60}
         priority
-        className="h-auto w-[180px] object-contain"
+        className="h-auto w-[180px]  object-contain"
+        style={{ height: "auto" }}
       />
     </a>
   );
@@ -83,7 +95,7 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-t-2 border-t-[#f9bd0e] border-b border-b-white/10 bg-[#062970] font-sans">
+    <header className="sticky top-0 z-50 border-t-2 border-t-[#f9bd0e] border-b border-b-white/10 bg-[#ffffff] font-sans">
       <div className="mx-auto flex h-[100px] max-w-[1440px] items-center justify-between gap-6 px-6 lg:px-10">
         <Logo />
 
@@ -117,9 +129,7 @@ export default function Header() {
                     aria-haspopup="true"
                     onClick={() => setOpenMenu(open ? null : item.label)}
                     onKeyDown={(e) => e.key === "Escape" && setOpenMenu(null)}
-                    className={`${itemBase} ${
-                      open ? "bg-[#f9bd0e] text-black" : ""
-                    }`}
+                    className={`${itemBase} ${open ? itemActive : ""}`}
                   >
                     {item.label}
                     <Chevron open={open} />
@@ -132,7 +142,7 @@ export default function Header() {
                           <li key={l.label}>
                             <a
                               href={l.href}
-                              className="block rounded-xl px-4 py-2.5 text-[15px] text-black transition-colors hover:bg-[#f9bd0e] focus-visible:bg-[#f9bd0e] focus-visible:outline-none"
+                              className="block rounded-xl px-4 py-2.5 text-[15px] text-[#000000] underline-offset-4 decoration-2 decoration-transparent transition-colors hover:text-[#062970] hover:underline hover:decoration-[#f9bd0e] focus-visible:text-[#062970] focus-visible:underline focus-visible:decoration-[#f9bd0e] focus-visible:outline-none"
                             >
                               {l.label}
                             </a>
@@ -152,7 +162,7 @@ export default function Header() {
           <button
             type="button"
             aria-label="Search"
-            className="hidden h-11 w-11 items-center justify-center rounded-full border border-white/25 text-white transition-colors hover:border-[#f9bd0e] hover:bg-[#f9bd0e] hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f9bd0e] sm:flex"
+            className="hidden h-11 w-11 items-center justify-center rounded-full border border-white/25 text-black transition-colors hover:border-[#f9bd0e] hover:bg-[#f9bd0e] hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f9bd0e] sm:flex"
           >
             <svg
               viewBox="0 0 24 24"
@@ -172,9 +182,9 @@ export default function Header() {
 
           <a
             href="#"
-            className="hidden items-center gap-1.5 rounded text-[16px] font-medium text-white hover:underline hover:decoration-[#f9bd0e] hover:decoration-2 hover:underline-offset-8 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#f9bd0e] md:flex"
+            className="hidden items-center gap-1.5 rounded text-[16px] font-medium text-[#000000] underline-offset-8 decoration-2  transition-colors  underline decoration-[#f9bd0e] focus-visible:text-[#f9bd0e] focus-visible:underline focus-visible:decoration-[#f9bd0e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#f9bd0e] md:flex"
           >
-            Shop
+            Authority Quotient
             <svg
               viewBox="0 0 12 12"
               className="h-3 w-3"
@@ -246,7 +256,7 @@ export default function Header() {
               <a
                 key={item.label}
                 href={item.href}
-                className="block border-b border-white/10 py-4 text-[17px] font-medium text-white"
+                className="block border-b border-white/10 py-4 text-[17px] font-medium text-[#062970] underline-offset-4 decoration-2 decoration-transparent transition-colors hover:text-[#f9bd0e] hover:underline hover:decoration-[#f9bd0e]"
               >
                 {item.label}
               </a>
@@ -264,14 +274,17 @@ export default function Header() {
                 <ul className="pb-3">
                   {item.links.map((l) => (
                     <li key={l.label}>
-                      <a href={l.href} className="block py-2 pl-3 text-white/85">
+                      <a
+                        href={l.href}
+                        className="block py-2 pl-3 text-white/85 underline-offset-4 decoration-2 decoration-transparent transition-colors hover:text-[#f9bd0e] hover:underline hover:decoration-[#f9bd0e]"
+                      >
                         {l.label}
                       </a>
                     </li>
                   ))}
                 </ul>
               </details>
-            )
+            ),
           )}
           <a
             href="#"
