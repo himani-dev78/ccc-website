@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 /**
  * Palette
@@ -29,15 +30,13 @@ const NAV = [
     href: "/insights",
   },
   {
+    label: "Blogs",
+    href: "/blogs",
+  },
+  {
     label: "Services",
-    links: [
-      { label: "Team Synergy", href: "#" },
-      { label: "Ace Your Meetings", href: "#" },
-      { label: "Networking Conversations", href: "#" },
-      { label: "Brand You", href: "#" },
-      { label: "Storytelling for Business", href: "#" },
-      { label: "Instructional Design & Facilitation", href: "#" },
-    ],
+    href: "/services",
+    links: [],
   },
   { label: "Portfolio", href: "/portfolio" },
 ];
@@ -72,7 +71,7 @@ function Chevron({ open = false }) {
 
 function Logo() {
   return (
-    <a
+    <Link
       href="/"
       className="flex items-center rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#f9bd0e]"
       aria-label="Client Centered Consulting home"
@@ -86,30 +85,74 @@ function Logo() {
         className="h-auto w-[180px]  object-contain"
         style={{ height: "auto" }}
       />
-    </a>
+    </Link>
   );
 }
 
 export default function Header() {
   const [openMenu, setOpenMenu] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [services, setServices] = useState([]);
+  const navItems = NAV.map((item) =>
+    item.label === "Services"
+      ? {
+          ...item,
+          links: services.map((service) => ({
+            label: service.title,
+            href: `/services/${service.slug}`,
+          })),
+        }
+      : item,
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadServices() {
+      try {
+        const response = await fetch("/api/services", {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(
+            data?.message || "Unable to load services navigation.",
+          );
+        }
+        if (!data || !Array.isArray(data.services)) {
+          throw new Error(
+            "The services response was not in the expected format.",
+          );
+        }
+        setServices(data.services);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Load services navigation error:", error);
+        }
+      }
+    }
+
+    loadServices();
+    return () => controller.abort();
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 border-t-2 border-t-[#f9bd0e] border-b border-b-white/10 bg-[#ffffff] font-sans">
-      <div className="mx-auto flex h-[100px] max-w-[1440px] items-center justify-between gap-6 px-6 lg:px-10">
+      <div className="mx-auto flex h-[100px] max-w-[1440px] items-center justify-between gap-6 px-0 lg:px-10">
         <Logo />
 
         {/* Desktop nav */}
         <nav aria-label="Main" className="hidden flex-1 lg:block">
           <ul className="flex items-center gap-1 pl-4">
-            {NAV.map((item) => {
+            {navItems.map((item) => {
               // Plain link (no dropdown)
               if (!item.links?.length) {
                 return (
                   <li key={item.label}>
-                    <a href={item.href} className={itemBase}>
+                    <Link href={item.href} className={itemBase}>
                       {item.label}
-                    </a>
+                    </Link>
                   </li>
                 );
               }
@@ -140,12 +183,12 @@ export default function Header() {
                       <ul className="min-w-[240px] overflow-hidden rounded-2xl border border-black/10 bg-white p-2 shadow-[0_12px_32px_rgba(0,0,0,0.25)]">
                         {item.links.map((l) => (
                           <li key={l.label}>
-                            <a
+                            <Link
                               href={l.href}
                               className="block rounded-xl px-4 py-2.5 text-[15px] text-[#000000] underline-offset-4 decoration-2 decoration-transparent transition-colors hover:text-[#062970] hover:underline hover:decoration-[#f9bd0e] focus-visible:text-[#062970] focus-visible:underline focus-visible:decoration-[#f9bd0e] focus-visible:outline-none"
                             >
                               {l.label}
-                            </a>
+                            </Link>
                           </li>
                         ))}
                       </ul>
@@ -159,7 +202,7 @@ export default function Header() {
 
         {/* Right cluster */}
         <div className="flex items-center gap-4">
-          <button
+          {/* <button
             type="button"
             aria-label="Search"
             className="hidden h-11 w-11 items-center justify-center rounded-full border border-white/25 text-black transition-colors hover:border-[#f9bd0e] hover:bg-[#f9bd0e] hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f9bd0e] sm:flex"
@@ -176,12 +219,12 @@ export default function Header() {
               <circle cx="11" cy="11" r="6.5" />
               <path d="m16 16 4 4" />
             </svg>
-          </button>
+          </button> */}
 
           <span className="hidden h-8 w-px bg-white/20 md:block" aria-hidden />
 
-          <a
-            href="#"
+          <Link
+            href="/aq"
             className="hidden items-center gap-1.5 rounded text-[16px] font-medium text-[#000000] underline-offset-8 decoration-2  transition-colors  underline decoration-[#f9bd0e] focus-visible:text-[#f9bd0e] focus-visible:underline focus-visible:decoration-[#f9bd0e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#f9bd0e] md:flex"
           >
             Authority Quotient
@@ -197,10 +240,10 @@ export default function Header() {
             >
               <path d="M3.5 8.5 8.5 3.5M4 3.5h4.5V8" />
             </svg>
-          </a>
+          </Link>
 
-          <a
-            href="#"
+          <Link
+            href="/contact-us"
             className="group hidden items-center gap-3 rounded-full bg-[#f9bd0e] px-6 py-4 text-[16px] font-bold leading-none text-black transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
           >
             Talk to us
@@ -216,7 +259,7 @@ export default function Header() {
             >
               <path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" />
             </svg>
-          </a>
+          </Link>
 
           {/* Mobile toggle */}
           <button
@@ -251,15 +294,15 @@ export default function Header() {
           aria-label="Mobile"
           className="border-t border-white/10 bg-[#062970] px-6 pb-6 lg:hidden"
         >
-          {NAV.map((item) =>
+          {navItems.map((item) =>
             !item.links?.length ? (
-              <a
+              <Link
                 key={item.label}
                 href={item.href}
-                className="block border-b border-white/10 py-4 text-[17px] font-medium text-[#062970] underline-offset-4 decoration-2 decoration-transparent transition-colors hover:text-[#f9bd0e] hover:underline hover:decoration-[#f9bd0e]"
+                className="block border-b border-white/10 py-4 text-[17px] font-medium text-white underline-offset-4 decoration-2 decoration-transparent transition-colors hover:text-[#f9bd0e] hover:underline hover:decoration-[#f9bd0e]"
               >
                 {item.label}
-              </a>
+              </Link>
             ) : (
               <details
                 key={item.label}
@@ -274,24 +317,24 @@ export default function Header() {
                 <ul className="pb-3">
                   {item.links.map((l) => (
                     <li key={l.label}>
-                      <a
+                      <Link
                         href={l.href}
                         className="block py-2 pl-3 text-white/85 underline-offset-4 decoration-2 decoration-transparent transition-colors hover:text-[#f9bd0e] hover:underline hover:decoration-[#f9bd0e]"
                       >
                         {l.label}
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </ul>
               </details>
             ),
           )}
-          <a
-            href="#"
+          <Link
+            href="/contact-us"
             className="mt-5 flex items-center justify-center rounded-full bg-[#f9bd0e] py-4 font-bold text-black"
           >
             Talk to us
-          </a>
+          </Link>
         </nav>
       )}
     </header>

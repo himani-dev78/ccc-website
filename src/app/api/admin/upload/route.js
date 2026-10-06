@@ -1,10 +1,10 @@
-import { createHmac, randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-const allowedFolders = new Set(["portfolio", "team", "testimonials"]);
+const allowedFolders = new Set(["portfolio", "team", "testimonials", "blogs", "services"]);
 const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
 
 async function isAdmin() {
@@ -56,7 +56,9 @@ export async function POST(request) {
     const publicId = randomUUID();
     const timestamp = Math.floor(Date.now() / 1000);
     const signatureParams = `folder=${folder}&public_id=${publicId}&timestamp=${timestamp}`;
-    const signature = createHmac("sha1", apiSecret).update(signatureParams).digest("hex");
+    const signature = createHash("sha1")
+      .update(`${signatureParams}${apiSecret}`)
+      .digest("hex");
     const cloudForm = new FormData();
     cloudForm.append("file", file);
     cloudForm.append("api_key", apiKey);
@@ -69,11 +71,29 @@ export async function POST(request) {
       `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
       { method: "POST", body: cloudForm }
     );
-    const cloudData = await cloudResponse.json();
+    const cloudData = await cloudResponse.json().catch(() => null);
 
     if (!cloudResponse.ok) {
-      console.error("Cloudinary upload failed:", cloudData.error?.message);
-      return NextResponse.json({ message: "Cloud image upload failed" }, { status: 502 });
+      const providerMessage =
+        typeof cloudData?.error?.message === "string"
+          ? cloudData.error.message.slice(0, 300)
+          : "The image provider returned an unreadable response";
+      console.error("Cloudinary upload failed:", {
+        status: cloudResponse.status,
+        message: providerMessage,
+      });
+      return NextResponse.json(
+        { message: `Cloudinary rejected the upload: ${providerMessage}` },
+        { status: 502 }
+      );
+    }
+
+    if (typeof cloudData?.secure_url !== "string" || !cloudData.secure_url) {
+      console.error("Cloudinary upload response did not include an image URL");
+      return NextResponse.json(
+        { message: "Cloudinary accepted the upload but returned no image URL" },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({

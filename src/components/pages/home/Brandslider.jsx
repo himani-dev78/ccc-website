@@ -45,8 +45,9 @@ function Row({ hidden = false }) {
 export default function BrandSlider() {
   return (
     <section
+      id="home-clients"
       aria-label="Brands we've collaborated with"
-      className="brand-marquee w-full bg-white py-16 md:py-20"
+      className="brand-marquee scroll-mt-24 w-full bg-white py-16 md:py-20"
     >
       <style>{`
         @keyframes brand-marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
@@ -71,10 +72,10 @@ export default function BrandSlider() {
 
       <div className="mt-10 text-center">
         <Link
-          href="/clients"
+          href="/portfolio"
           className="inline-flex items-center gap-2 bg-[#f9bd0e] px-8 py-3 text-sm font-bold uppercase tracking-wider text-black transition-colors hover:bg-[#062970] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#062970]"
         >
-          More clients
+          Explore our work
         </Link>
       </div>
     </section>

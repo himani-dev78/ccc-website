@@ -147,6 +147,7 @@ export default function Testimonials() {
 
   return (
     <section
+      id="home-testimonials"
       aria-roledescription="carousel"
       aria-label="Testimonials"
       tabIndex={pages > 1 ? 0 : -1}
@@ -162,7 +163,7 @@ export default function Testimonials() {
         if (Math.abs(dx) > 50) goTo(page + (dx < 0 ? 1 : -1));
         touchX.current = null;
       }}
-      className="w-full bg-white py-16 outline-none md:py-24"
+      className="scroll-mt-24 w-full bg-white py-16 outline-none md:py-24"
     >
       <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
         {/* Heading with side lines */}

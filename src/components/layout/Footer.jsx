@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
+import { ArrowRight, ArrowUpRight, Mail, MapPin, Phone } from "lucide-react";
 
 const defaultSettings = {
   siteName: "Client Centered Consulting",
@@ -13,10 +15,27 @@ const defaultSettings = {
   linkedin: "https://www.linkedin.com/",
   instagram: "https://www.instagram.com/",
   youtube: "https://www.youtube.com/",
-  newsletterTitle: "Presentation Science",
 };
 
-const socialIcons = {
+const pageLinks = [
+  { label: "Home", href: "/" },
+  { label: "About Us", href: "/about-us" },
+  { label: "Our Team", href: "/team" },
+  { label: "Insights", href: "/insights" },
+  { label: "Blogs", href: "/blogs" },
+  { label: "Portfolio", href: "/portfolio" },
+  { label: "Authority Quotient", href: "/aq" },
+  { label: "Contact Us", href: "/contact-us" },
+];
+
+const homeSectionLinks = [
+  { label: "Our team", href: "/#home-team" },
+  { label: "Our services", href: "/#home-services" },
+  { label: "Testimonials", href: "/#home-testimonials" },
+  { label: "Our clients", href: "/#home-clients" },
+];
+
+const socialPaths = {
   facebook:
     "M13.5 21v-8h2.7l.4-3.2h-3.1V7.8c0-.9.25-1.5 1.55-1.5h1.65V3.44A22 22 0 0 0 14.3 3.3c-2.4 0-4.05 1.47-4.05 4.15v2.35H7.5V13h2.75v8h3.25Z",
   linkedin:
@@ -27,45 +46,64 @@ const socialIcons = {
     "M21.6 7.2a2.5 2.5 0 0 0-1.76-1.77C18.27 5 12 5 12 5s-6.27 0-7.84.43A2.5 2.5 0 0 0 2.4 7.2C2 8.78 2 12 2 12s0 3.22.4 4.8a2.5 2.5 0 0 0 1.76 1.77C5.73 19 12 19 12 19s6.27 0 7.84-.43a2.5 2.5 0 0 0 1.76-1.77C22 15.22 22 12 22 12s0-3.22-.4-4.8ZM10 15V9l5.2 3-5.2 3Z",
 };
 
+const columnHeading =
+  "mb-5 text-xs font-bold uppercase tracking-[0.2em] text-[#f9bd0e]";
+const footerLink =
+  "group inline-flex items-center gap-1.5 text-sm text-slate-300 transition-colors hover:text-[#f9bd0e]";
+
 export default function Footer() {
   const [settings, setSettings] = useState(defaultSettings);
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("idle");
+  const [services, setServices] = useState([]);
 
   useEffect(() => {
-    async function fetchSettings() {
-      try {
-        const response = await fetch("/api/settings");
-        const data = await response.json();
+    const controller = new AbortController();
 
-        if (response.ok && data.settings) {
-          setSettings({ ...defaultSettings, ...data.settings });
+    async function loadSettings() {
+      try {
+        const response = await fetch("/api/settings", {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(data?.message || "Unable to load footer settings.");
         }
+        if (data?.settings) setSettings({ ...defaultSettings, ...data.settings });
       } catch (error) {
-        console.error("Failed to fetch settings:", error);
+        if (error.name !== "AbortError") {
+          console.error("Load footer settings error:", error);
+        }
       }
     }
 
-    fetchSettings();
+    async function loadServices() {
+      try {
+        const response = await fetch("/api/services", {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(data?.message || "Unable to load footer services.");
+        }
+        if (!Array.isArray(data?.services)) {
+          throw new Error("The services response was not in the expected format.");
+        }
+        setServices(data.services);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Load footer services error:", error);
+        }
+      }
+    }
+
+    loadSettings();
+    loadServices();
+    return () => controller.abort();
   }, []);
 
-  const onSubmit = (e) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setStatus("done");
-    setEmail("");
-  };
-
-  const quickLinks = [
-    { label: "Home", href: "/" },
-    { label: "About Us", href: "/about-us" },
-    { label: "Portfolio", href: "/portfolio" },
-    { label: "Team", href: "/team" },
-    { label: "Contact", href: "/contact-us" },
-  ];
-
-  const socialLinks = Object.entries(socialIcons)
-    .filter(([key]) => settings[key] && settings[key].trim())
+  const socialLinks = Object.entries(socialPaths)
+    .filter(([key]) => settings[key]?.trim())
     .map(([key, path]) => ({
       key,
       label: key.charAt(0).toUpperCase() + key.slice(1),
@@ -74,145 +112,166 @@ export default function Footer() {
     }));
 
   return (
-    <footer className="relative overflow-hidden bg-[#0a142d] text-white">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f9bd0e] to-transparent" />
-      <div className="absolute -left-24 top-12 h-64 w-64 rounded-full bg-[#f9bd0e]/10 blur-3xl" />
-      <div className="absolute -right-12 bottom-0 h-64 w-64 rounded-full bg-[#1e3a8a]/40 blur-3xl" />
+    <footer className="relative overflow-hidden bg-[#071735] text-white">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#0b2a6a] via-[#f9bd0e] to-[#0b2a6a]" />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-24 top-10 h-80 w-80 rounded-full bg-[#f9bd0e]/[0.06] blur-3xl"
+      />
 
-      <div className="relative mx-auto max-w-7xl px-6 py-12 lg:px-8 xl:px-10">
-        <div className="grid gap-10 border-b border-white/10 pb-10 md:grid-cols-2 xl:grid-cols-[1.4fr_1fr_0.9fr_1.1fr]">
-          <div>
-            <div className="mb-5 inline-flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#f9bd0e] text-lg font-black text-[#0b2a6a]">
-                CC
-              </span>
-              <div>
-                <p className="text-lg font-black uppercase tracking-[0.18em] text-[#f9bd0e]">
-                  {settings.siteName || "Client Centered Consulting"}
-                </p>
-              </div>
-            </div>
-
-            <p className="max-w-md text-sm leading-7 text-slate-300">
-              {settings.tagline || "A Learning and Development Organization"}
+      <div className="relative mx-auto max-w-[1440px] px-6 pb-6 pt-14 lg:px-10 lg:pt-20">
+        <div className="flex flex-col gap-8 border-b border-white/10 pb-10 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <Link
+              href="/"
+              
+              className="inline-flex rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#f9bd0e]"
+            >
+              <Image
+                src="/ccc-new-logo-rev3.png"
+                alt={settings.siteName}
+                width={250}
+                height={88}
+                className="h-auto w-[210px] object-contain object-left"
+              />
+            </Link>
+            <p className="mt-4 max-w-lg text-sm leading-7 text-slate-300">
+              {settings.tagline}
             </p>
-
-            <div className="mt-6 rounded-2xl border border-[#f9bd0e]/30 bg-[#f9bd0e]/5 p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f9bd0e]">
-                {settings.newsletterTitle || "Presentation Science"}
-              </p>
-              <form
-                onSubmit={onSubmit}
-                className="mt-4 flex flex-col gap-3 sm:flex-row"
-              >
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (status === "done") setStatus("idle");
-                  }}
-                  placeholder="Your email address"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-[#f9bd0e] focus:outline-none focus:ring-2 focus:ring-[#f9bd0e]/30"
-                />
-                <button
-                  type="submit"
-                  className="rounded-xl bg-[#f9bd0e] px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#0b2a6a] transition hover:bg-[#f7d14d]"
-                >
-                  Subscribe
-                </button>
-              </form>
-
-              <p className="mt-3 min-h-5 text-xs text-[#f9bd0e]" role="status">
-                {status === "done" ? "Thanks! You are on the list." : ""}
-              </p>
-            </div>
           </div>
 
-          <div>
-            <h3 className="mb-5 text-sm font-black uppercase tracking-[0.2em] text-[#f9bd0e]">
-              Quick Links
-            </h3>
+          <Link
+            href="/contact-us"
+            className="group inline-flex w-fit items-center gap-3 rounded-full bg-[#f9bd0e] px-6 py-3.5 text-sm font-bold text-[#0b2a6a] transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+          >
+            Talk to our team
+            <ArrowRight
+              size={17}
+              className="transition-transform group-hover:translate-x-1"
+              aria-hidden="true"
+            />
+          </Link>
+        </div>
+
+        <div className="grid gap-x-8 gap-y-10 border-b border-white/10 py-10 sm:grid-cols-2 lg:grid-cols-5 lg:py-12">
+          <nav aria-label="Footer pages">
+            <h2 className={columnHeading}>Explore</h2>
             <ul className="space-y-3">
-              {quickLinks.map((link) => (
+              {pageLinks.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-slate-300 transition hover:text-[#f9bd0e]"
-                  >
+                  <Link className={footerLink} href={link.href}>
+                    {link.label}
+                    <ArrowUpRight
+                      aria-hidden="true"
+                      className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100"
+                    />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <nav aria-label="Footer services">
+            <h2 className={columnHeading}>Services</h2>
+            <ul className="space-y-3">
+              <li>
+                <Link className={footerLink} href="/services">
+                  All services
+                </Link>
+              </li>
+              {services.map((service) => (
+                <li key={service._id || service.slug}>
+                  <Link className={footerLink} href={`/services/${service.slug}`}>
+                    {service.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <nav aria-label="Homepage sections">
+            <h2 className={columnHeading}>On the homepage</h2>
+            <ul className="space-y-3">
+              {homeSectionLinks.map((link) => (
+                <li key={link.href}>
+                  <Link className={footerLink} href={link.href}>
                     {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
-          <div>
-            <h3 className="mb-5 text-sm font-black uppercase tracking-[0.2em] text-[#f9bd0e]">
-              Contact
-            </h3>
-            <ul className="space-y-3 text-sm text-slate-300">
+          <div className="lg:col-span-2">
+            <h2 className={columnHeading}>Get in touch</h2>
+            <ul className="space-y-4 text-sm text-slate-300">
               <li>
                 <a
-                  href={`tel:${settings.phone}`}
-                  className="transition hover:text-[#f9bd0e]"
+                  href={`tel:${settings.phone.replace(/[^\d+]/g, "")}`}
+                  className="inline-flex items-start gap-3 transition-colors hover:text-[#f9bd0e]"
                 >
-                  {settings.phone}
+                  <Phone size={17} className="mt-0.5 shrink-0 text-[#f9bd0e]" />
+                  <span>{settings.phone}</span>
                 </a>
               </li>
               <li>
                 <a
                   href={`mailto:${settings.email}`}
-                  className="transition hover:text-[#f9bd0e]"
+                  className="inline-flex items-start gap-3 transition-colors hover:text-[#f9bd0e]"
                 >
-                  {settings.email}
+                  <Mail size={17} className="mt-0.5 shrink-0 text-[#f9bd0e]" />
+                  <span className="break-all">{settings.email}</span>
                 </a>
               </li>
-              <li>{settings.address}</li>
+              <li className="flex items-start gap-3">
+                <MapPin size={17} className="mt-0.5 shrink-0 text-[#f9bd0e]" />
+                <span>{settings.address}</span>
+              </li>
             </ul>
-          </div>
 
-          <div>
-            <h3 className="mb-5 text-sm font-black uppercase tracking-[0.2em] text-[#f9bd0e]">
-              Follow Us
-            </h3>
-            <div className="flex flex-wrap gap-3">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.key}
-                  href={social.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={social.label}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 transition hover:border-[#f9bd0e] hover:bg-[#f9bd0e] hover:text-[#0b2a6a]"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-4 w-4"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path d={social.path} />
-                  </svg>
-                </a>
-              ))}
-            </div>
+            {socialLinks.length > 0 && (
+              <div className="mt-7">
+                <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                  Follow CCC
+                </h3>
+                <ul className="flex flex-wrap gap-2.5">
+                  {socialLinks.map((social) => (
+                    <li key={social.key}>
+                      <a
+                        href={social.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={social.label}
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-slate-200 transition hover:border-[#f9bd0e] hover:bg-[#f9bd0e] hover:text-[#0b2a6a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f9bd0e]"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-4 w-4"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path d={social.path} />
+                        </svg>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 pt-6 text-sm text-slate-400 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 pt-6 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © {new Date().getFullYear()} {settings.siteName}. All rights
-            reserved.
+            © {new Date().getFullYear()} {settings.siteName}. All rights reserved.
           </p>
-
-          <button
-            type="button"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="inline-flex items-center self-start rounded-full border border-[#f9bd0e]/40 bg-[#f9bd0e]/10 px-4 py-2 font-semibold text-[#f9bd0e] transition hover:bg-[#f9bd0e] hover:text-[#0b2a6a]"
+          <Link
+            href="/"
+            className="inline-flex w-fit items-center gap-2 font-semibold text-slate-300 transition hover:text-[#f9bd0e]"
           >
             Back to top
-          </button>
+            <span aria-hidden="true">↑</span>
+          </Link>
         </div>
       </div>
     </footer>

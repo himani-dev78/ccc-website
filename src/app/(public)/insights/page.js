@@ -1,19 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Bebas_Neue, Newsreader } from "next/font/google";
 import {
   ArrowRight,
-  Clock,
   Mail,
   CheckCircle2,
   Lightbulb,
   Gauge,
+  Loader2,
 } from "lucide-react";
-import { ARTICLES, FEATURED_INSIGHT } from "@/components/Articles";
-import { CATEGORIES } from "@/components/getCaseStudy";
+import { FEATURED_INSIGHT } from "@/components/Articles";
 
 
 const bebas = Bebas_Neue({ subsets: ["latin"], weight: "400" });
@@ -30,14 +29,18 @@ function SectionLabel({ children }) {
 }
 
 function ArticleCard({ article }) {
+  const content = (article.content || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const excerpt =
+    content.length > 160 ? `${content.slice(0, 157).trimEnd()}...` : content;
+
   return (
     <Link
-      href={`/insights/${article.slug}`}
+      href={`/blogs/${article.slug}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:-translate-y-1.5 hover:border-[#f9bd0e] hover:shadow-[0_16px_40px_-18px_rgba(11,42,106,0.3)]"
     >
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#0b2a6a]">
         <Image
-          src={article.image}
+          src=          {article.featuredImage}
           alt=""
           fill
           sizes="(min-width: 1024px) 380px, 90vw"
@@ -47,7 +50,7 @@ function ArticleCard({ article }) {
 
       <div className="flex flex-1 flex-col p-6">
         <span className="inline-flex w-fit rounded-full bg-[#0b2a6a]/5 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[#0b2a6a]/60">
-          {article.category}
+          {article.category?.name || "Insight"}
         </span>
 
         <h3 className="mt-3 text-[18px] font-bold leading-snug text-[#0b2a6a]">
@@ -57,16 +60,15 @@ function ArticleCard({ article }) {
         <p
           className={`${newsreader.className} mt-2.5 flex-1 text-[15px] leading-relaxed text-slate-500`}
         >
-          {article.excerpt}
+          {excerpt}
         </p>
 
         <div className="mt-5 flex items-center justify-between">
-          <span className="inline-flex items-center gap-1.5 text-[13px] text-slate-400">
-            <Clock className="h-3.5 w-3.5" />
-            {article.readTime}
-          </span>
+          <time className="text-[13px] text-slate-400">
+            {new Date(article.createdAt).toLocaleDateString()}
+          </time>
           <span className="inline-flex items-center gap-1.5 text-[14px] font-bold text-[#0b2a6a] group-hover:text-[#f9bd0e]">
-            Read article
+            Read blog
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </span>
         </div>
@@ -79,11 +81,53 @@ export default function InsightsPage() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+  const [blogs, setBlogs] = useState([]);
+  const [blogsLoading, setBlogsLoading] = useState(true);
+  const [blogsError, setBlogsError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadBlogs() {
+      try {
+        const response = await fetch("/api/blogs", {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(data?.message || "Unable to load the latest insights.");
+        }
+        if (!data || !Array.isArray(data.blogs)) {
+          throw new Error("The blog response was not in the expected format.");
+        }
+        setBlogs(data.blogs);
+      } catch (loadError) {
+        if (loadError.name !== "AbortError") {
+          console.error("Load latest insights error:", loadError);
+          setBlogsError(loadError.message || "Unable to load the latest insights.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setBlogsLoading(false);
+      }
+    }
+
+    loadBlogs();
+    return () => controller.abort();
+  }, []);
+
+  const categories = useMemo(
+    () => [
+      "All",
+      ...new Set(blogs.map((blog) => blog.category?.name).filter(Boolean)),
+    ],
+    [blogs],
+  );
 
   const filtered = useMemo(() => {
-    if (activeCategory === "All") return ARTICLES;
-    return ARTICLES.filter((a) => a.category === activeCategory);
-  }, [activeCategory]);
+    if (activeCategory === "All") return blogs;
+    return blogs.filter((blog) => blog.category?.name === activeCategory);
+  }, [activeCategory, blogs]);
 
   function handleSubscribe(e) {
     e.preventDefault();
@@ -198,7 +242,7 @@ export default function InsightsPage() {
             aria-label="Filter by category"
             className="mt-10 flex flex-wrap justify-center gap-2.5"
           >
-            {CATEGORIES.map((cat) => {
+            {categories.map((cat) => {
               const active = cat === activeCategory;
               return (
                 <button
@@ -218,13 +262,30 @@ export default function InsightsPage() {
             })}
           </div>
 
-          {filtered.length === 0 ? (
+          {blogsLoading ? (
+            <div
+              className="mt-16 flex min-h-40 items-center justify-center gap-3 text-sm text-slate-500"
+              role="status"
+            >
+              <Loader2 className="h-5 w-5 animate-spin text-[#0b2a6a]" />
+              Loading latest insights...
+            </div>
+          ) : blogsError ? (
+            <p
+              className="mt-12 rounded-xl border border-red-200 bg-red-50 p-5 text-center text-sm text-red-700"
+              role="alert"
+            >
+              {blogsError}
+            </p>
+          ) : filtered.length === 0 ? (
             <div className="mt-16 flex flex-col items-center justify-center text-center">
               <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#f9bd0e]/15">
                 <Lightbulb className="h-7 w-7 text-[#0b2a6a]" />
               </span>
               <p className="mt-4 text-[15px] text-slate-500">
-                No articles in this category yet.
+                {activeCategory === "All"
+                  ? "No blogs have been published yet."
+                  : "No blogs in this category yet."}
               </p>
             </div>
           ) : (
@@ -294,7 +355,7 @@ export default function InsightsPage() {
               className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-full bg-emerald-500/15 px-4 py-2 text-sm font-semibold text-emerald-300"
             >
               <CheckCircle2 className="h-4.5 w-4.5" />
-              You're subscribed to Presentation Science.
+              You&apos;re subscribed to Presentation Science.
             </p>
           )}
         </div>
