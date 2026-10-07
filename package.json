@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start",
+  "lint": "eslint",
+  "create-admin": "node scripts/create-admin.cjs"
+},
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "dotenv": "^18.0.5",
