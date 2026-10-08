@@ -188,9 +188,9 @@ export default function AuthorityQuotientPage() {
           {profiles.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2">
               {profiles.map((profile, index) => (
-                <article key={`${profile.name}-${index}`} className="rounded-2xl border border-slate-200 bg-[#f6f7fb] p-6">
+                <article key={profile.key || index} className="rounded-2xl border border-slate-200 bg-[#f6f7fb] p-6">
                   <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-[#a77b00]">
-                    <Sparkles className="h-3.5 w-3.5" /> AQ profile · {profile.minScore}–{profile.maxScore}
+                    <Sparkles className="h-3.5 w-3.5" /> AQ profile{aq.scoringMode === "points" && profile.minScore != null ? ` · ${profile.minScore}–${profile.maxScore}` : ""}
                   </span>
                   <p className={`${bebas.className} mt-3 text-3xl uppercase text-[#0b2a6a]`}>{profile.headline}</p>
                   <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">{profile.name}</p>

@@ -2,23 +2,28 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Loader2, RotateCcw } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { Bebas_Neue } from "next/font/google";
 
 const bebas = Bebas_Neue({ subsets: ["latin"], weight: "400" });
 
+const fields = [
+  { key: "name", label: "Full name", type: "text", autoComplete: "name", placeholder: "Your name" },
+  { key: "email", label: "Email address", type: "email", autoComplete: "email", placeholder: "you@company.com" },
+  { key: "phone", label: "Phone number", type: "tel", autoComplete: "tel", placeholder: "+91 98765 43210" },
+];
+
 export default function AQAssessmentPage() {
-  const router = useRouter();
   const [aq, setAQ] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [scoreError, setScoreError] = useState("");
-  const [answers, setAnswers] = useState([]);
+  const [answers, setAnswers] = useState([]); // option index per question
   const [step, setStep] = useState(0);
-  const [complete, setComplete] = useState(false);
-  const [result, setResult] = useState(null);
-  const [scoring, setScoring] = useState(false);
+  const [stage, setStage] = useState("quiz"); // quiz | form | done
+  const [form, setForm] = useState({ name: "", email: "", phone: "", website: "" });
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -45,8 +50,6 @@ export default function AQAssessmentPage() {
 
   const questions = aq?.questions || [];
   const profiles = aq?.profiles || [];
-  const score = result?.score ?? 0;
-  const resultProfile = result?.profile;
 
   function chooseAnswer(optionIndex) {
     setAnswers((current) => {
@@ -56,31 +59,57 @@ export default function AQAssessmentPage() {
     });
   }
 
-  async function finishAssessment() {
-    try {
-      setScoring(true);
-      setScoreError("");
-      const response = await fetch("/api/aq/score", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers }),
-      });
-      const data = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(data?.message || "Unable to calculate your AQ result.");
-      setResult(data);
-      setComplete(true);
-    } catch (scoreError) {
-      setScoreError(scoreError.message || "Unable to calculate your AQ result.");
-    } finally {
-      setScoring(false);
+  function validate() {
+    const errors = {};
+    if (form.name.trim().length < 2) errors.name = "Please enter your name";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = "Please enter a valid email";
+    if (form.phone.replace(/\D/g, "").length < 7 || !/^\+?[0-9\s\-()]{7,20}$/.test(form.phone.trim())) {
+      errors.phone = "Please enter a valid phone number";
     }
+    return errors;
   }
 
-  function restart() {
-    setAnswers([]);
-    setStep(0);
-    setComplete(false);
-    setResult(null);
+  async function handleSubmit(event) {
+    event.preventDefault();
+    const errors = validate();
+    setFieldErrors(errors);
+    setSubmitError("");
+    if (Object.keys(errors).length) return;
+
+    setSubmitting(true);
+    const params = new URLSearchParams(window.location.search);
+    try {
+      const response = await fetch("/api/assessment/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          website: form.website,
+          source: params.get("utm_source") || "",
+          campaign: params.get("utm_campaign") || "",
+          answers: questions.map((question, index) => ({
+            questionId: question._id,
+            optionId: question.options[answers[index]]?._id,
+          })),
+        }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        const serverErrors = Object.fromEntries(
+          Object.entries(data?.errors || {}).map(([key, messages]) => [key, messages?.[0]]),
+        );
+        setFieldErrors(serverErrors);
+        throw new Error(data?.message || "Something went wrong. Please try again.");
+      }
+      setStage("done");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (error) {
+      setSubmitError(error.message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (loading) {
@@ -114,65 +143,28 @@ export default function AQAssessmentPage() {
     );
   }
 
-  if (complete) {
+  /* ---------- thank you ---------- */
+  if (stage === "done") {
     return (
       <main className="min-h-screen bg-[#f6f7fb] px-6 py-12 sm:py-20">
-        <section className="mx-auto max-w-3xl overflow-hidden rounded-3xl bg-white shadow-xl">
-          <div className="bg-[#0b2a6a] px-7 py-10 text-center text-white sm:px-12 sm:py-14">
-            <span className="inline-flex rounded-full bg-[#f9bd0e]/15 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-[#f9bd0e]">
-              Your AQ result
-            </span>
-            <p className={`${bebas.className} mt-5 text-6xl text-[#f9bd0e]`}>{score}</p>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/60">Assessment score</p>
-            {resultProfile ? (
-              <>
-                <h1 className={`${bebas.className} mt-7 text-4xl uppercase leading-tight sm:text-5xl`}>
-                  {resultProfile.headline}
-                </h1>
-                <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-[#f9bd0e]">{resultProfile.name}</p>
-              </>
-            ) : (
-              <h1 className={`${bebas.className} mt-7 text-4xl uppercase`}>Your score is ready</h1>
-            )}
+        <section className="mx-auto max-w-2xl overflow-hidden rounded-3xl bg-white text-center shadow-xl">
+          <div className="bg-[#0b2a6a] px-7 py-12 text-white sm:px-12">
+            <CheckCircle2 size={52} className="mx-auto text-[#f9bd0e]" />
+            <h1 className={`${bebas.className} mt-5 text-4xl uppercase leading-tight sm:text-5xl`}>
+              Thank you, {form.name.trim().split(/\s+/)[0]}!
+            </h1>
+            <p className="mt-3 text-white/80">Your assessment has been submitted.</p>
           </div>
-          <div className="space-y-7 p-7 sm:p-10">
-            {resultProfile ? (
-              <>
-                <p className="text-base leading-7 text-slate-600">{resultProfile.description}</p>
-                <div className="grid gap-6 sm:grid-cols-2">
-                  {resultProfile.strengths?.length > 0 && (
-                    <div>
-                      <h2 className="font-bold text-[#0b2a6a]">Strengths</h2>
-                      <ul className="mt-3 space-y-2">
-                        {resultProfile.strengths.map((item, index) => <li key={`${item}-${index}`} className="flex gap-2 text-sm text-slate-600"><Check size={16} className="mt-0.5 shrink-0 text-emerald-600" />{item}</li>)}
-                      </ul>
-                    </div>
-                  )}
-                  {resultProfile.watchOuts?.length > 0 && (
-                    <div>
-                      <h2 className="font-bold text-[#0b2a6a]">Areas to watch</h2>
-                      <ul className="mt-3 space-y-2">
-                        {resultProfile.watchOuts.map((item, index) => <li key={`${item}-${index}`} className="flex gap-2 text-sm text-slate-600"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#f9bd0e]" />{item}</li>)}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-                {resultProfile.recommendedService && (
-                  <div className="rounded-xl bg-[#fffaea] p-5">
-                    <p className="text-xs font-bold uppercase tracking-wide text-[#a77b00]">Recommended CCC service</p>
-                    <p className="mt-1 font-semibold text-[#0b2a6a]">{resultProfile.recommendedService}</p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <p className="text-sm leading-6 text-slate-600">
-                Your score does not currently fall within a configured result profile. Please contact CCC for help interpreting your result.
-              </p>
-            )}
+          <div className="space-y-5 p-7 sm:p-10">
+            <p className="text-base leading-7 text-slate-600">
+              We&apos;re preparing your detailed Authority Quotient result — your AQ score, your profile, your strengths
+              and the areas to watch. It will be sent to <strong className="text-[#0b2a6a]">{form.email.trim()}</strong> shortly.
+            </p>
+            <p className="text-sm text-slate-500">Can&apos;t see it? Check your spam or promotions folder.</p>
             <div className="flex flex-wrap justify-center gap-3 pt-2">
-              <button type="button" onClick={restart} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-[#0b2a6a] hover:bg-slate-50">
-                <RotateCcw size={16} /> Retake assessment
-              </button>
+              <Link href="/aq" className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-[#0b2a6a] hover:bg-slate-50">
+                Learn about AQ
+              </Link>
               <Link href="/contact-us" className="rounded-xl bg-[#f9bd0e] px-5 py-3 text-sm font-bold text-[#0b2a6a] hover:bg-[#f5c93e]">
                 Talk to CCC
               </Link>
@@ -183,9 +175,83 @@ export default function AQAssessmentPage() {
     );
   }
 
+  /* ---------- details form ---------- */
+  if (stage === "form") {
+    return (
+      <main className="min-h-screen bg-[#f6f7fb] px-6 py-12 sm:py-20">
+        <section className="mx-auto max-w-xl">
+          <button
+            type="button"
+            onClick={() => setStage("quiz")}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[#0b2a6a] hover:text-[#a77b00]"
+          >
+            <ArrowLeft size={17} /> Back to questions
+          </button>
+          <form onSubmit={handleSubmit} noValidate className="mt-7 rounded-3xl border border-slate-200 bg-white p-6 shadow-lg sm:p-10">
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#a77b00]">Almost there</span>
+            <h1 className={`${bebas.className} mt-3 text-4xl uppercase leading-tight text-[#0b2a6a]`}>See your AQ result</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Tell us where to send it. Your AQ score and detailed profile will be emailed to you.
+            </p>
+
+            {fields.map((field) => (
+              <div key={field.key} className="mt-5">
+                <label htmlFor={field.key} className="mb-1.5 block text-sm font-semibold text-[#0b2a6a]">
+                  {field.label} <span className="text-red-600">*</span>
+                </label>
+                <input
+                  id={field.key}
+                  type={field.type}
+                  autoComplete={field.autoComplete}
+                  placeholder={field.placeholder}
+                  value={form[field.key]}
+                  onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
+                  aria-invalid={Boolean(fieldErrors[field.key])}
+                  aria-describedby={fieldErrors[field.key] ? `${field.key}-error` : undefined}
+                  className={`w-full rounded-xl border px-4 py-3 text-sm text-[#0b2a6a] focus:outline-none focus:ring-2 focus:ring-[#f9bd0e]/30 ${
+                    fieldErrors[field.key] ? "border-red-400" : "border-slate-200 focus:border-[#f9bd0e]"
+                  }`}
+                />
+                {fieldErrors[field.key] && (
+                  <p id={`${field.key}-error`} className="mt-1 text-sm text-red-700">{fieldErrors[field.key]}</p>
+                )}
+              </div>
+            ))}
+
+            {/* honeypot — hidden from people and screen readers */}
+            <div aria-hidden="true" className="absolute left-[-9999px] h-0 overflow-hidden">
+              <label htmlFor="website">Website</label>
+              <input
+                id="website"
+                tabIndex={-1}
+                autoComplete="off"
+                value={form.website}
+                onChange={(event) => setForm({ ...form, website: event.target.value })}
+              />
+            </div>
+
+            {submitError && <p role="alert" className="mt-5 text-sm text-red-700">{submitError}</p>}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0b2a6a] px-6 py-3.5 text-sm font-bold text-white hover:bg-[#153b87] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {submitting ? <Loader2 size={16} className="animate-spin" /> : null}
+              {submitting ? "Submitting..." : "Submit"}
+            </button>
+            <p className="mt-4 text-center text-xs text-slate-500">We&apos;ll only use your details to send your result and follow up about AQ.</p>
+          </form>
+        </section>
+      </main>
+    );
+  }
+
+  /* ---------- quiz ---------- */
   const question = questions[step];
   const selected = answers[step];
   const progress = ((step + 1) / questions.length) * 100;
+  const isLast = step === questions.length - 1;
 
   return (
     <main className="min-h-screen bg-[#f6f7fb] px-6 py-12 sm:py-20">
@@ -207,7 +273,7 @@ export default function AQAssessmentPage() {
           <div className="mt-7 space-y-3">
             {question.options.map((option, index) => (
               <button
-                key={`${option.text}-${index}`}
+                key={option._id}
                 type="button"
                 aria-pressed={selected === index}
                 onClick={() => chooseAnswer(index)}
@@ -217,11 +283,10 @@ export default function AQAssessmentPage() {
                     : "border-slate-200 bg-white text-slate-700 hover:border-[#f9bd0e] hover:bg-[#fffaea]"
                 }`}
               >
-                {option.text}
+                {option.label}
               </button>
             ))}
           </div>
-          {scoreError && <p role="alert" className="mt-5 text-sm text-red-700">{scoreError}</p>}
           <div className="mt-8 flex justify-between">
             <button
               type="button"
@@ -233,12 +298,12 @@ export default function AQAssessmentPage() {
             </button>
             <button
               type="button"
-              disabled={selected === undefined || scoring}
-              onClick={() => step === questions.length - 1 ? finishAssessment() : setStep((current) => current + 1)}
+              disabled={selected === undefined}
+              onClick={() => (isLast ? setStage("form") : setStep((current) => current + 1))}
               className="inline-flex items-center gap-2 rounded-xl bg-[#0b2a6a] px-5 py-3 text-sm font-bold text-white hover:bg-[#153b87] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {scoring ? "Calculating..." : step === questions.length - 1 ? "See my result" : "Next question"}
-              {scoring ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+              {isLast ? "See your result" : "Next question"}
+              <ArrowRight size={16} />
             </button>
           </div>
         </div>

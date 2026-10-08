@@ -298,68 +298,7 @@ export default function InsightsPage() {
         </div>
       </section>
 
-      {/* ───────────────────── PRESENTATION SCIENCE NEWSLETTER ───────────────────── */}
-      <section className="relative overflow-hidden bg-[#0b2a6a] py-20 text-white lg:py-24">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -left-24 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-[#f9bd0e]/10 blur-3xl"
-        />
-        <div className="relative mx-auto max-w-[700px] px-6 text-center lg:px-10">
-          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f9bd0e] text-[#0b2a6a]">
-            <Mail className="h-6.5 w-6.5" />
-          </span>
-          <p className="mt-5 text-[13px] font-bold uppercase tracking-wider text-[#f9bd0e]">
-            Presentation Science
-          </p>
-          <h2
-            className={`${bebas.className} mt-2 text-[clamp(2rem,4.5vw,3.25rem)] uppercase leading-[0.98]`}
-          >
-            Practical thinking for{" "}
-            <span className="text-[#f9bd0e]">better communication</span>
-          </h2>
-          <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-white/70">
-            Get useful ideas on leadership, communication, presentations and
-            storytelling delivered to your inbox.
-          </p>
-
-          <form
-            onSubmit={handleSubscribe}
-            className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row"
-          >
-            <label htmlFor="newsletter-email" className="sr-only">
-              Email address
-            </label>
-            <input
-              id="newsletter-email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (subscribed) setSubscribed(false);
-              }}
-              placeholder="Email address"
-              className="w-full rounded-xl border border-white/20 bg-white/5 px-5 py-3.5 text-[15px] text-white placeholder:text-white/40 focus:border-[#f9bd0e] focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#f9bd0e]/40"
-            />
-            <button
-              type="submit"
-              className={`${bebas.className} shrink-0 rounded-xl bg-[#f9bd0e] px-8 py-3.5 text-xl uppercase tracking-wide text-[#0b2a6a] transition-colors hover:bg-white`}
-            >
-              Subscribe
-            </button>
-          </form>
-
-          {subscribed && (
-            <p
-              role="status"
-              className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-full bg-emerald-500/15 px-4 py-2 text-sm font-semibold text-emerald-300"
-            >
-              <CheckCircle2 className="h-4.5 w-4.5" />
-              You&apos;re subscribed to Presentation Science.
-            </p>
-          )}
-        </div>
-      </section>
+     
 
       {/* ───────────────────── AQ CTA ───────────────────── */}
       <section className="py-20 lg:py-28">

@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-const allowedFolders = new Set(["portfolio", "team", "testimonials", "blogs", "services"]);
+const allowedFolders = new Set(["portfolio", "team", "testimonials", "blogs", "services", "aq"]);
 const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
 
 async function isAdmin() {

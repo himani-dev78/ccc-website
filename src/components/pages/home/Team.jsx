@@ -114,7 +114,7 @@ export default function Team() {
   );
 
   return (
-    <section id="home-team" className="scroll-mt-24 w-full bg-white py-16 md:py-24">
+    <section id="home-team" className=" w-full bg-white py-10 md:py-12">
       <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
         {/* Header row: title + description on the left, slider arrows top-right */}
         <div className="flex flex-col gap-6 border-t border-black/10 pt-8 sm:flex-row sm:items-start sm:justify-between">

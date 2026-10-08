@@ -1,94 +1,66 @@
+import mongoose from "mongoose";
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { jwtVerify } from "jose";
 
 import { connectDB } from "@/lib/db";
+import { isAdminRequest } from "@/lib/auth";
 import { defaultAQ } from "@/lib/aqDefaults";
+import { normalizeAQ, slugifyKey } from "@/lib/aqScoring";
 import AQSettings from "@/model/AQSettings";
 
-const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
+export const dynamic = "force-dynamic";
 
-async function checkAdmin() {
-  const token = (await cookies()).get("admin_token")?.value;
-  if (!token) return false;
+const unauthorized = () => NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-  try {
-    await jwtVerify(token, secretKey);
-    return true;
-  } catch {
-    return false;
-  }
-}
+const str = (value) => (typeof value === "string" ? value.trim() : "");
+const num = (value, fallback = 0) => {
+  if (value === "" || value === null || value === undefined) return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : NaN; // NaN is reported by the model's validation
+};
+const lines = (value) =>
+  (Array.isArray(value) ? value : []).filter((item) => typeof item === "string").map((item) => item.trim()).filter(Boolean);
+// Keep existing ids so saved progress and stored leads keep pointing at the same questions/options.
+const keepId = (value) => (mongoose.isValidObjectId(value) ? { _id: value } : {});
 
-function validateAQ(value) {
-  if (!value || typeof value !== "object" || !value.content || typeof value.content !== "object") {
-    return "AQ page content is required";
-  }
-
-  const questions = Array.isArray(value.questions) ? value.questions : [];
-  for (const [index, question] of questions.entries()) {
-    if (!question.prompt?.trim() || !Array.isArray(question.options) || question.options.length < 2) {
-      return `Question ${index + 1} needs a prompt and at least two answers`;
-    }
-    if (question.options.some((option) => !option.text?.trim() || !Number.isFinite(Number(option.points)))) {
-      return `Every answer in question ${index + 1} needs text and a valid points value`;
-    }
-  }
-
-  const profiles = Array.isArray(value.profiles) ? value.profiles : [];
-  if (questions.length > 0 && profiles.length === 0) {
-    return "Add at least one result profile before publishing assessment questions";
-  }
-  for (const [index, profile] of profiles.entries()) {
-    if (
-      !profile.name?.trim() ||
-      !profile.headline?.trim() ||
-      !profile.description?.trim() ||
-      !Number.isFinite(Number(profile.minScore)) ||
-      !Number.isFinite(Number(profile.maxScore)) ||
-      Number(profile.minScore) > Number(profile.maxScore)
-    ) {
-      return `Result profile ${index + 1} needs a name, headline, description and valid score range`;
-    }
-  }
-
-  if (questions.length > 0 && profiles.length > 0) {
-    const possibleMin = questions.reduce(
-      (total, question) => total + Math.min(...question.options.map((option) => Number(option.points))),
-      0,
-    );
-    const possibleMax = questions.reduce(
-      (total, question) => total + Math.max(...question.options.map((option) => Number(option.points))),
-      0,
-    );
-    const sortedProfiles = [...profiles].sort((a, b) => Number(a.minScore) - Number(b.minScore));
-
-    if (
-      Number(sortedProfiles[0].minScore) > possibleMin ||
-      Number(sortedProfiles[sortedProfiles.length - 1].maxScore) < possibleMax
-    ) {
-      return `Result profiles must cover all possible assessment scores (${possibleMin} to ${possibleMax})`;
-    }
-
-    for (let index = 1; index < sortedProfiles.length; index += 1) {
-      if (Number(sortedProfiles[index].minScore) <= Number(sortedProfiles[index - 1].maxScore)) {
-        return "Result profile score ranges must not overlap";
-      }
-    }
-  }
-
-  return "";
+function sanitize(body) {
+  return {
+    scoringMode: body.scoringMode === "points" ? "points" : "profile",
+    questions: (Array.isArray(body.questions) ? body.questions : []).slice(0, 100).map((question) => ({
+      ...keepId(question?._id),
+      prompt: str(question?.prompt),
+      published: question?.published !== false,
+      options: (Array.isArray(question?.options) ? question.options : []).slice(0, 10).map((option) => ({
+        ...keepId(option?._id),
+        label: str(option?.label),
+        profileKey: str(option?.profileKey).toLowerCase(),
+        points: num(option?.points),
+      })),
+    })),
+    profiles: (Array.isArray(body.profiles) ? body.profiles : []).slice(0, 20).map((profile) => ({
+      ...keepId(profile?._id),
+      key: slugifyKey(str(profile?.key) || str(profile?.name)),
+      name: str(profile?.name),
+      headline: str(profile?.headline),
+      description: str(profile?.description),
+      strengths: lines(profile?.strengths),
+      watchOuts: lines(profile?.watchOuts),
+      recommendedService: mongoose.isValidObjectId(profile?.recommendedService) ? profile.recommendedService : null,
+      imageUrl: str(profile?.imageUrl),
+      minScore: num(profile?.minScore, null),
+      maxScore: num(profile?.maxScore, null),
+    })),
+  };
 }
 
 export async function GET() {
   try {
-    if (!(await checkAdmin())) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
+    if (!(await isAdminRequest())) return unauthorized();
 
     await connectDB();
     const saved = await AQSettings.findOne().lean();
-    return NextResponse.json({ aq: saved || defaultAQ });
+    return NextResponse.json({
+      aq: saved ? normalizeAQ(saved) : { ...defaultAQ, scoringMode: "profile" },
+    });
   } catch (error) {
     console.error("Get admin AQ settings error:", error);
     return NextResponse.json({ message: "Unable to load AQ settings" }, { status: 500 });
@@ -97,57 +69,38 @@ export async function GET() {
 
 export async function PUT(request) {
   try {
-    if (!(await checkAdmin())) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    if (!(await isAdminRequest())) return unauthorized();
+
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ message: "Invalid request body" }, { status: 400 });
     }
 
-    const body = await request.json();
-    const aq = {
-      content: body.content,
-      questions: Array.isArray(body.questions)
-        ? body.questions.map((question) => ({
-            prompt: typeof question.prompt === "string" ? question.prompt.trim() : "",
-            options: Array.isArray(question.options)
-              ? question.options.map((option) => ({
-                  text: typeof option.text === "string" ? option.text.trim() : "",
-                  points: Number(option.points),
-                }))
-              : [],
-          }))
-        : [],
-      profiles: Array.isArray(body.profiles)
-        ? body.profiles.map((profile) => ({
-            name: typeof profile.name === "string" ? profile.name.trim() : "",
-            headline: typeof profile.headline === "string" ? profile.headline.trim() : "",
-            minScore: Number(profile.minScore),
-            maxScore: Number(profile.maxScore),
-            description: typeof profile.description === "string" ? profile.description.trim() : "",
-            strengths: Array.isArray(profile.strengths)
-              ? profile.strengths.filter((item) => typeof item === "string").map((item) => item.trim()).filter(Boolean)
-              : [],
-            watchOuts: Array.isArray(profile.watchOuts)
-              ? profile.watchOuts.filter((item) => typeof item === "string").map((item) => item.trim()).filter(Boolean)
-              : [],
-            recommendedService:
-              typeof profile.recommendedService === "string" ? profile.recommendedService.trim() : "",
-          }))
-        : [],
-    };
-
-    const validationError = validateAQ(aq);
-    if (validationError) {
-      return NextResponse.json({ message: validationError }, { status: 400 });
-    }
+    const data = sanitize(body);
 
     await connectDB();
-    const saved = await AQSettings.findOneAndUpdate({}, aq, {
-      new: true,
-      upsert: true,
-      runValidators: true,
-      setDefaultsOnInsert: true,
-    }).lean();
+    const doc = (await AQSettings.findOne()) || new AQSettings({ content: defaultAQ.content });
+    doc.scoringMode = data.scoringMode;
+    doc.questions = data.questions;
+    doc.profiles = data.profiles;
+    if (body.content && typeof body.content === "object") {
+      doc.content = body.content;
+      doc.markModified("content");
+    }
 
-    return NextResponse.json({ message: "AQ settings saved successfully", aq: saved });
+    try {
+      await doc.save(); // runs the AQ validation in the model
+    } catch (error) {
+      if (error.name === "AQValidationError" || error.name === "ValidationError" || error.name === "CastError") {
+        return NextResponse.json({ message: error.message }, { status: 400 });
+      }
+      throw error;
+    }
+
+    return NextResponse.json({
+      message: "AQ assessment saved",
+      aq: normalizeAQ(doc.toObject()),
+    });
   } catch (error) {
     console.error("Update admin AQ settings error:", error);
     return NextResponse.json({ message: "Unable to save AQ settings" }, { status: 500 });
