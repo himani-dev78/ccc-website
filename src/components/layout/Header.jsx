@@ -44,7 +44,7 @@ const NAV = [
 // Underline-on-hover, same treatment as the "Authority Quotient" link —
 // replaces the old pill-background hover.
 const itemBase =
-  "flex items-center gap-2 rounded-full px-4 py-2 text-[16px] font-medium text-black underline-offset-8 decoration-2 decoration-transparent transition-colors hover:text-[#f9bd0e] hover:underline hover:decoration-[#f9bd0e] focus-visible:text-[#f9bd0e] focus-visible:underline focus-visible:decoration-[#f9bd0e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f9bd0e]";
+  "flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-[15px] font-medium 2xl:px-4 2xl:text-[16px] text-black underline-offset-8 decoration-2 decoration-transparent transition-colors hover:text-[#f9bd0e] hover:underline hover:decoration-[#f9bd0e] focus-visible:text-[#f9bd0e] focus-visible:underline focus-visible:decoration-[#f9bd0e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f9bd0e]";
 
 // Used when a trigger/link needs to stay "active" (open dropdown) without
 // the solid yellow pill fighting the underline style.
@@ -82,7 +82,7 @@ function Logo() {
         width={180}
         height={60}
         priority
-        className="h-auto w-[180px]  object-contain"
+        className="h-auto w-[130px] object-contain sm:w-[160px] 2xl:w-[180px]"
         style={{ height: "auto" }}
       />
     </Link>
@@ -139,12 +139,12 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-t-2 border-t-[#f9bd0e] border-b border-b-white/10 bg-[#ffffff] font-sans">
-      <div className="mx-auto flex h-[100px] max-w-[1440px] items-center justify-between gap-6 px-0 lg:px-10">
+      <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between gap-4 px-4 sm:h-[84px] sm:px-6 xl:h-[100px] xl:gap-6 xl:px-10">
         <Logo />
 
-        {/* Desktop nav */}
-        <nav aria-label="Main" className="hidden flex-1 lg:block">
-          <ul className="flex items-center gap-1 pl-4">
+        {/* Desktop nav — only from xl, where all items fit on one line */}
+        <nav aria-label="Main" className="hidden flex-1 xl:block">
+          <ul className="flex items-center gap-0.5 pl-2 2xl:gap-1 2xl:pl-4">
             {navItems.map((item) => {
               // Plain link (no dropdown)
               if (!item.links?.length) {
@@ -185,6 +185,7 @@ export default function Header() {
                           <li key={l.label}>
                             <Link
                               href={l.href}
+                              onClick={() => setOpenMenu(null)}
                               className="block rounded-xl px-4 py-2.5 text-[15px] text-[#000000] underline-offset-4 decoration-2 decoration-transparent transition-colors hover:text-[#062970] hover:underline hover:decoration-[#f9bd0e] focus-visible:text-[#062970] focus-visible:underline focus-visible:decoration-[#f9bd0e] focus-visible:outline-none"
                             >
                               {l.label}
@@ -201,7 +202,7 @@ export default function Header() {
         </nav>
 
         {/* Right cluster */}
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-3 xl:gap-4">
           {/* <button
             type="button"
             aria-label="Search"
@@ -221,11 +222,11 @@ export default function Header() {
             </svg>
           </button> */}
 
-          <span className="hidden h-8 w-px bg-white/20 md:block" aria-hidden />
+          <span className="hidden h-8 w-px bg-white/20 xl:block" aria-hidden />
 
           <Link
             href="/aq"
-            className="hidden items-center gap-1.5 rounded text-[16px] font-medium text-[#000000] underline-offset-8 decoration-2  transition-colors  underline decoration-[#f9bd0e] focus-visible:text-[#f9bd0e] focus-visible:underline focus-visible:decoration-[#f9bd0e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#f9bd0e] md:flex"
+            className="hidden items-center gap-1.5 whitespace-nowrap rounded text-[15px] font-medium 2xl:text-[16px] text-[#000000] underline-offset-8 decoration-2  transition-colors  underline decoration-[#f9bd0e] focus-visible:text-[#f9bd0e] focus-visible:underline focus-visible:decoration-[#f9bd0e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#f9bd0e] xl:flex"
           >
             Authority Quotient
             <svg
@@ -244,7 +245,7 @@ export default function Header() {
 
           <Link
             href="/contact-us"
-            className="group hidden items-center gap-3 rounded-full bg-[#f9bd0e] px-6 py-4 text-[16px] font-bold leading-none text-black transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
+            className="group hidden items-center gap-3 whitespace-nowrap rounded-full bg-[#f9bd0e] px-5 py-3.5 text-[15px] font-bold leading-none 2xl:px-6 2xl:py-4 2xl:text-[16px] text-black transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
           >
             Talk to us
             <svg
@@ -267,7 +268,7 @@ export default function Header() {
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((v) => !v)}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f9bd0e] text-black lg:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f9bd0e] text-black xl:hidden"
           >
             <svg
               viewBox="0 0 24 24"
@@ -292,9 +293,10 @@ export default function Header() {
       {mobileOpen && (
         <nav
           aria-label="Mobile"
-          className="border-t border-white/10 bg-[#062970] px-6 pb-6 lg:hidden"
+          onClick={(event) => event.target.closest("a") && setMobileOpen(false)}
+          className="max-h-[calc(100dvh-72px)] overflow-y-auto overscroll-contain border-t border-white/10 bg-[#062970] px-4 pb-6 sm:max-h-[calc(100dvh-84px)] sm:px-6 xl:hidden"
         >
-          {navItems.map((item) =>
+          {[...navItems, { label: "Authority Quotient", href: "/aq" }].map((item) =>
             !item.links?.length ? (
               <Link
                 key={item.label}
@@ -319,7 +321,7 @@ export default function Header() {
                     <li key={l.label}>
                       <Link
                         href={l.href}
-                        className="block py-2 pl-3 text-white/85 underline-offset-4 decoration-2 decoration-transparent transition-colors hover:text-[#f9bd0e] hover:underline hover:decoration-[#f9bd0e]"
+                        className="block py-2.5 pl-3 text-white/85 underline-offset-4 decoration-2 decoration-transparent transition-colors hover:text-[#f9bd0e] hover:underline hover:decoration-[#f9bd0e]"
                       >
                         {l.label}
                       </Link>

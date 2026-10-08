@@ -31,7 +31,7 @@ const SLIDES = [
     href: "/services/instructional-design",
     image: "https://picsum.photos/id/1074/1920/1080",
     video: null,
-    logo: "/clients/tata-aig.png",
+    logo: "/TATA-AIG.png",
     logoAlt: "Tata AIG Insurance",
   },
   {
@@ -55,7 +55,7 @@ const SLIDES = [
     href: "/services/storytelling",
     image: "https://picsum.photos/id/1062/1920/1080",
     video: null,
-    logo: "/clients/pwc.png",
+    logo: "/PWC.png",
     logoAlt: "PwC",
   },
 ];
@@ -80,14 +80,17 @@ function Arrow({ dir = "right" }) {
 }
 
 /* Logo with a graceful text fallback so a missing file never shows a broken image */
-function LogoImage({ src, alt, width, height, className }) {
-  const [failed, setFailed] = useState(false);
+// `compact` is the small mobile chip; the fallback text is sized to fit its box either way.
+function LogoImage({ src, alt, width, height, className, compact = false }) {
+  const [failed, setFailed] = useState(!src);
 
   if (failed) {
     return (
       <span
-        className={`${bebas.className} flex items-center justify-center text-center text-4xl uppercase tracking-wide text-[#062970]`}
-        style={{ width, height }}
+        className={`${bebas.className} flex items-center justify-center text-center uppercase leading-none tracking-wide text-[#062970] ${
+          compact ? "whitespace-nowrap text-2xl" : "text-5xl"
+        }`}
+        style={compact ? { minHeight: height } : { width, height }}
       >
         {alt}
       </span>
@@ -285,7 +288,7 @@ export default function Hero() {
               <div>
                 {/* Mobile-only compact client logo chip */}
                 <div
-                  className={`mb-5 inline-flex h-14 items-center rounded-xl bg-white px-4 shadow-[5px_5px_0_#f9bd0e] lg:hidden ${reveal(
+                  className={`mb-5 inline-flex h-14 max-w-full items-center rounded-xl bg-white px-4 shadow-[5px_5px_0_#f9bd0e] lg:hidden ${reveal(
                     "delay-100",
                   )}`}
                 >
@@ -294,6 +297,7 @@ export default function Hero() {
                     alt={s.logoAlt}
                     width={110}
                     height={36}
+                    compact
                     className="h-9 w-auto max-w-[110px] object-contain"
                   />
                 </div>

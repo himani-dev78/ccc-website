@@ -146,7 +146,7 @@ export default function AQAssessmentPage() {
   /* ---------- thank you ---------- */
   if (stage === "done") {
     return (
-      <main className="min-h-screen bg-[#f6f7fb] px-6 py-12 sm:py-20">
+      <main className="min-h-screen bg-[#f6f7fb] px-4 py-10 sm:px-6 sm:py-20">
         <section className="mx-auto max-w-2xl overflow-hidden rounded-3xl bg-white text-center shadow-xl">
           <div className="bg-[#0b2a6a] px-7 py-12 text-white sm:px-12">
             <CheckCircle2 size={52} className="mx-auto text-[#f9bd0e]" />
@@ -178,7 +178,7 @@ export default function AQAssessmentPage() {
   /* ---------- details form ---------- */
   if (stage === "form") {
     return (
-      <main className="min-h-screen bg-[#f6f7fb] px-6 py-12 sm:py-20">
+      <main className="min-h-screen bg-[#f6f7fb] px-4 py-10 sm:px-6 sm:py-20">
         <section className="mx-auto max-w-xl">
           <button
             type="button"
@@ -187,7 +187,7 @@ export default function AQAssessmentPage() {
           >
             <ArrowLeft size={17} /> Back to questions
           </button>
-          <form onSubmit={handleSubmit} noValidate className="mt-7 rounded-3xl border border-slate-200 bg-white p-6 shadow-lg sm:p-10">
+          <form onSubmit={handleSubmit} noValidate className="mt-7 rounded-3xl border border-slate-200 bg-white p-5 shadow-lg sm:p-10">
             <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#a77b00]">Almost there</span>
             <h1 className={`${bebas.className} mt-3 text-4xl uppercase leading-tight text-[#0b2a6a]`}>See your AQ result</h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -254,15 +254,18 @@ export default function AQAssessmentPage() {
   const isLast = step === questions.length - 1;
 
   return (
-    <main className="min-h-screen bg-[#f6f7fb] px-6 py-12 sm:py-20">
+    <main className="min-h-screen bg-[#f6f7fb] px-4 py-10 sm:px-6 sm:py-20">
       <section className="mx-auto max-w-3xl">
         <Link href="/aq" className="inline-flex items-center gap-2 text-sm font-semibold text-[#0b2a6a] hover:text-[#a77b00]">
           <ArrowLeft size={17} /> Back to Authority Quotient
         </Link>
-        <div className="mt-7 rounded-3xl border border-slate-200 bg-white p-6 shadow-lg sm:p-10">
+        <div className="mt-7 rounded-3xl border border-slate-200 bg-white p-5 shadow-lg sm:p-10">
           <div className="flex items-center justify-between gap-4">
-            <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#a77b00]">Authority Quotient assessment</span>
-            <span className="text-sm font-semibold text-slate-500">{step + 1} / {questions.length}</span>
+            <span className="min-w-0 text-xs font-bold uppercase tracking-[0.12em] text-[#a77b00] sm:tracking-[0.18em]">
+              <span className="sm:hidden">AQ assessment</span>
+              <span className="hidden sm:inline">Authority Quotient assessment</span>
+            </span>
+            <span className="shrink-0 whitespace-nowrap text-sm font-semibold text-slate-500">{step + 1} / {questions.length}</span>
           </div>
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
             <div className="h-full rounded-full bg-[#f9bd0e] transition-all" style={{ width: `${progress}%` }} />
