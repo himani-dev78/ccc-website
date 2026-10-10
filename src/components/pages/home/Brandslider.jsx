@@ -7,16 +7,30 @@ import Link from "next/link";
  * `brightness-0` turns any logo solid black, so white-on-dark logos work too.
  */
 const BRANDS = [
-  { name: "Accenture", logo: "/a-1024x269.png" },
-  { name: "Xceedance", logo: "/Airtel-logo-1024x365.png" },
-  { name: "Sony", logo: "/ccc-new-logo-rev3.png" },
-  { name: "PwC", logo: "/PWC.png" },
-  { name: "Airtel", logo: "/Xceedance-rev-logo.png" },
-  { name: "Tata AIG Life", logo: "/TATA-AIG.png" },
+  { name: "Accenture", logo: "/clients/accenture.png" },
+  { name: "Sony", logo: "/clients/sony.png" },
+  { name: "PwC", logo: "/clients/pwc.png" },
+  { name: "ITC", logo: "/clients/itc.png" },
+  { name: "Tata AIG", logo: "/clients/tata-aig.png" },
+  { name: "Airtel", logo: "/clients/airtel.png" },
+  { name: "Trilegal", logo: "/clients/trilegal.png" },
+  { name: "Xceedance", logo: "/clients/xceedance.png" },
+  { name: "NatWest", logo: "/clients/natwest.png" },
+  { name: "Grant Thornton", logo: "/clients/grant-thornton.png" },
+  { name: "Emaar", logo: "/clients/emaar.png" },
+  { name: "Oppo", logo: "/clients/oppo.png" },
+  { name: "Hapag-Lloyd", logo: "/clients/hapag-lloyd.png" },
+  { name: "Quick Heal", logo: "/clients/quick-heal.png" },
+  { name: "Jindal", logo: "/clients/jindal.png" },
+  { name: "Incedo", logo: "/clients/incedo.png" },
+  { name: "Inforica", logo: "/clients/inforica.png" },
+  { name: "Veethree", logo: "/clients/veethree.png" },
+  { name: "Earthworm", logo: "/clients/earthworm.png" },
+  { name: "TPC", logo: "/clients/tpc.png" },
 ];
 
-// Repeat so one "half" is wider than a big screen, then render it twice for a seamless loop
-const ROW = [...BRANDS, ...BRANDS];
+// One row is already wider than a big screen; it's rendered twice for a seamless loop
+const ROW = BRANDS;
 
 function Row({ hidden = false }) {
   return (

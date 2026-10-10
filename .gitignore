@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# database backups from scripts/seed-old-site.cjs
+/scripts/backups/

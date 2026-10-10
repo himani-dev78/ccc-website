@@ -28,13 +28,13 @@ const defaultSettings = {
   siteName: "Client Centered Consulting",
   tagline: "A Learning and Development Organization",
   newsletterTitle: "Presentation Science",
-  phone: "+91 99717 64792",
-  email: "clientcenteredconsulting@gmail.com",
-  address: "India",
-  facebook: "https://www.facebook.com/",
-  linkedin: "https://www.linkedin.com/",
-  instagram: "https://www.instagram.com/",
-  youtube: "https://www.youtube.com/",
+  phone: "(+91) 997-176-4792",
+  email: "greg@cccforleaders.com",
+  address: "Gurgaon, NCR, Mumbai, Cape Town - S.A.",
+  facebook: "",
+  linkedin: "https://www.linkedin.com/in/thisisgregchapman/",
+  instagram: "",
+  youtube: "",
 };
 
 export async function GET() {
